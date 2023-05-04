@@ -8,9 +8,9 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.item.Item;
-import net.minecraft.tag.TagKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,7 +23,7 @@ public class Linkart implements ModInitializer {
     public static LinkartConfiguration CONFIG;
     public static final Map<PlayerEntity, AbstractMinecartEntity> LINKING_CARTS = new HashMap<>();
     public static final Map<PlayerEntity, AbstractMinecartEntity> UNLINKING_CARTS = new HashMap<>();
-    public static final TagKey<Item> LINKERS = TagKey.of(Registry.ITEM_KEY, new Identifier(ID, "linkers"));
+    public static final TagKey<Item> LINKERS = TagKey.of(RegistryKeys.ITEM, new Identifier(ID, "linkers"));
 
     static {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
