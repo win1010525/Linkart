@@ -47,7 +47,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
                 LinkableMinecartsAccessor duck = (LinkableMinecartsAccessor) minecart;
                 ItemStack stack = player.getStackInHand(hand);
 
-                if (Linkart.LINKERS.contains(stack.getItem())) {
+                if (stack.isIn(Linkart.LINKERS)) {
                     if (Linkart.UNLINKING_CARTS.containsKey(player)) {
                         AbstractMinecartEntity unlinking = Linkart.UNLINKING_CARTS.get(player);
                         if (unlinking == null) {
