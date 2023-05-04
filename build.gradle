@@ -6,6 +6,7 @@ plugins {
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
+def mc_version = project.minecraft_version
 archivesBaseName = project.archives_base_name
 version = project.mod_version
 group = project.maven_group
@@ -81,6 +82,18 @@ java {
 jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesBaseName}" }
+    }
+}
+
+tasks.register('printVersionName') {
+    doLast {
+        println version.split("-")[0] + " (${mc_version})"
+    }
+}
+
+tasks.register('printVersion') {
+    doLast {
+        println version
     }
 }
 
