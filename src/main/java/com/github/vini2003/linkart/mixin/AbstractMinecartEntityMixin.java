@@ -50,7 +50,7 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
     private void linkart$tick(CallbackInfo ci) {
         if (!world.isClient()) {
             if (linkart$getFollowing() != null) {
-                if (linkart$getFollowing().removed || this.removed) {
+                if (linkart$getFollowing().isRemoved() || this.isRemoved()) {
                     linkart$unlink();
                     return;
                 }
