@@ -43,8 +43,8 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
     }
 
     private static void linkart$spawnChainParticles(AbstractMinecartEntity entity, LinkableMinecartsAccessor duck) {
-        if (!entity.world.isClient()) {
-            ((ServerWorld) entity.world).spawnParticles(new ItemStackParticleEffect(ParticleTypes.ITEM, duck.linkart$getLinkItem()), entity.getX(), entity.getY() + 0.3, entity.getZ(), 15, 0.2, 0.2, 0.2, 0.2);
+        if (!entity.getWorld().isClient()) {
+            ((ServerWorld) entity.getWorld()).spawnParticles(new ItemStackParticleEffect(ParticleTypes.ITEM, duck.linkart$getLinkItem()), entity.getX(), entity.getY() + 0.3, entity.getZ(), 15, 0.2, 0.2, 0.2, 0.2);
         }
     }
 
@@ -54,7 +54,7 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
     @Inject(at = @At("HEAD"), method = "tick")
     private void linkart$tick(CallbackInfo ci) {
-        if (!world.isClient()) {
+        if (!getWorld().isClient()) {
             if (linkart$getFollowing() != null) {
                 if (linkart$getFollowing().isRemoved() || this.isRemoved()) {
                     linkart$unlink();
@@ -80,10 +80,10 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
             if (Linkart.CONFIG.chunkloading) {
                 if (linkart$getFollower() != null && !approximatelyZero(this.getVelocity().length())) {
-                    ((ServerWorld) this.world).getChunkManager().addTicket(ChunkTicketType.PORTAL, this.getChunkPos(), Linkart.CONFIG.chunkloadingRadius, this.getBlockPos());
-                    LoadingCarts.getOrCreate((ServerWorld) world).addCart((AbstractMinecartEntity) (Object) this);
+                    ((ServerWorld) this.getWorld()).getChunkManager().addTicket(ChunkTicketType.PORTAL, this.getChunkPos(), Linkart.CONFIG.chunkloadingRadius, this.getBlockPos());
+                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).addCart((AbstractMinecartEntity) (Object) this);
                 } else {
-                    LoadingCarts.getOrCreate((ServerWorld) world).removeCart((AbstractMinecartEntity) (Object) this);
+                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).removeCart((AbstractMinecartEntity) (Object) this);
                 }
             }
         }
@@ -95,9 +95,9 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
         duck.linkart$setFollower(null);
         linkart$setFollowing(null);
 
-        ItemEntity itemEntity = new ItemEntity(world, getX(), getY(), getZ(), Items.CHAIN.getDefaultStack());
+        ItemEntity itemEntity = new ItemEntity(getWorld(), getX(), getY(), getZ(), Items.CHAIN.getDefaultStack());
         itemEntity.setToDefaultPickupDelay();
-        world.spawnEntity(itemEntity);
+        getWorld().spawnEntity(itemEntity);
 
         linkart$spawnChainParticles((AbstractMinecartEntity) (Object) this, this);
 
@@ -144,7 +144,7 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
     @Override
     public AbstractMinecartEntity linkart$getFollowing() {
         if (linkart$following == null) {
-            linkart$following = (AbstractMinecartEntity) ((ServerWorld) this.world).getEntity(linkart$followingUUID);
+            linkart$following = (AbstractMinecartEntity) ((ServerWorld) this.getWorld()).getEntity(linkart$followingUUID);
         }
         return linkart$following;
     }
@@ -157,7 +157,7 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
     @Override
     public AbstractMinecartEntity linkart$getFollower() {
         if (linkart$follower == null) {
-            linkart$follower = (AbstractMinecartEntity) ((ServerWorld) this.world).getEntity(linkart$followerUUID);
+            linkart$follower = (AbstractMinecartEntity) ((ServerWorld) this.getWorld()).getEntity(linkart$followerUUID);
         }
         return linkart$follower;
     }
