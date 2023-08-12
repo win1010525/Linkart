@@ -64,11 +64,11 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
                 Vec3d pos = getPos();
                 Vec3d pos2 = linkart$getFollowing().getPos();
                 double dist = Math.abs(pos.distanceTo(pos2)) - 1.2;
-                Vec3d vec3d = pos.relativize(pos2).normalize();
+                Vec3d vec3d = pos.relativize(pos2);
                 vec3d.multiply(Linkart.CONFIG.velocityMultiplier);
 
                 if (dist <= 1) {
-                    setVelocity(vec3d.multiply(dist * 0.75));
+                    setVelocity(vec3d.multiply(dist * 0.3));
                 } else {
                     if (dist <= Linkart.CONFIG.pathfindingDistance) {
                         setVelocity(vec3d);
