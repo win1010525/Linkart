@@ -15,20 +15,24 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class LoadingCarts extends PersistentState {
+
     public static LoadingCarts getOrCreate(ServerWorld world) {
-        return  (world).getPersistentStateManager().getOrCreate((nbt) -> {
+        return world.getPersistentStateManager().getOrCreate((nbt) -> {
             LoadingCarts carts = new LoadingCarts(world);
             carts.readNbt(nbt);
             return carts;
         }, () -> new LoadingCarts(world), "linkart_loading_carts");
     }
+
     private final ServerWorld world;
+
+    private final Set<BlockPos> chunksToReload = new HashSet<>();
+    private final Set<AbstractMinecartEntity> cartsToBlockPos = new HashSet<>();
 
     public LoadingCarts(ServerWorld world) {
         this.world = world;
     }
-    private final Set<BlockPos> chunksToReload = new HashSet<>();
-    private final Set<AbstractMinecartEntity> cartsToBlockPos = new HashSet<>();
+
     @Override
     public NbtCompound writeNbt(NbtCompound nbt) {
         NbtList list = new NbtList();
