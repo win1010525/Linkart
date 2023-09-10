@@ -16,6 +16,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -27,6 +28,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
         super(entityType, world);
     }
 
+    @Unique
     private static void linkart$spawnChainParticles(AbstractMinecartEntity entity, LinkableMinecart duck) {
         if (!entity.getWorld().isClient()) {
             ((ServerWorld) entity.getWorld()).spawnParticles(new ItemStackParticleEffect(ParticleTypes.ITEM, duck.linkart$getLinkItem()), entity.getX(), entity.getY() + 0.3, entity.getZ(), 15, 0.2, 0.2, 0.2, 0.2);
@@ -35,8 +37,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
 
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     void onInteract(Entity entity, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
-        if (entity instanceof AbstractMinecartEntity) {
-            AbstractMinecartEntity minecart = (AbstractMinecartEntity) entity;
+        if (entity instanceof AbstractMinecartEntity minecart) {
             if (!getWorld().isClient()) {
                 PlayerEntity player = (PlayerEntity) (Object) this;
                 LinkableMinecart duck = (LinkableMinecart) minecart;

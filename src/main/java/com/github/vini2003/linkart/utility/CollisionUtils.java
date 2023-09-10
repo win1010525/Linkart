@@ -6,8 +6,7 @@ import net.minecraft.entity.Entity;
 
 public class CollisionUtils {
     public static boolean shouldCollide(Entity source, Entity target) {
-        if (source instanceof LinkableMinecart) {
-            LinkableMinecart check = (LinkableMinecart) source;
+        if (source instanceof LinkableMinecart check) {
             int i = 0;
 
             do {

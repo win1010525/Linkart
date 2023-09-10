@@ -27,7 +27,7 @@ public abstract class EntityMixin {
 
     @Inject(at = @At("HEAD"), method = "remove")
     void linkart$removeLink(CallbackInfo callbackInformation) {
-        if ((Object) this instanceof AbstractMinecartEntity && !world.isClient()) {
+        if ((Entity) (Object) this instanceof AbstractMinecartEntity && !world.isClient()) {
             LinkableMinecart accessor = (LinkableMinecart) this;
             LinkableMinecart follower = (LinkableMinecart) accessor.linkart$getFollower();
             LinkableMinecart following = (LinkableMinecart) accessor.linkart$getFollowing();
@@ -46,9 +46,9 @@ public abstract class EntityMixin {
     void linkart$onRecalculateVelocity(Vec3d movement, CallbackInfoReturnable<Vec3d> cir) {
         List<Entity> collisions = this.world.getOtherEntities((Entity) (Object) this, getBoundingBox().stretch(movement));
 
-        if ((Entity) (Object) this instanceof AbstractMinecartEntity) {
+        if ((Entity) (Object) this instanceof AbstractMinecartEntity minecart) {
             for (Entity entity : collisions) {
-                if (!CollisionUtils.shouldCollide((Entity) (Object) this, entity) && world.getBlockState(((AbstractMinecartEntity) (Object) this).getBlockPos()).getBlock() instanceof AbstractRailBlock) {
+                if (!CollisionUtils.shouldCollide((Entity) (Object) this, entity) && world.getBlockState(minecart.getBlockPos()).getBlock() instanceof AbstractRailBlock) {
                     cir.setReturnValue(movement);
                     cir.cancel();
                 }
