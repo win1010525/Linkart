@@ -1,5 +1,9 @@
 ### What's New
 
-* Cart speed is no longer normalized. (carts can go >1 bps)
-* Carts will now be slower when in proximity.
-* Moved `LinkableMinecart` interface to `api` package.
+* Smoother deceleration in proximity. (By [GeeTransit](https://github.com/GeeTransit))
+* Fix velocityMultiplier not being applied. (By [GeeTransit](https://github.com/GeeTransit))
+* Carts will now stop when the link is broken. (By [GeeTransit](https://github.com/GeeTransit))
+* Ensure train carts don't reverse on sharp curves. (By [GeeTransit](https://github.com/GeeTransit))
+* Updated icon and contributors.
+* Loader version is now enforced.
+* Some other minor improvements.
