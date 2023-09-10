@@ -25,7 +25,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Linkart implements ModInitializer {
+
     public static final String ID = "linkart";
+    public static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("linkart.json");
     public static LinkartConfiguration CONFIG;
     public static final Map<PlayerEntity, AbstractMinecartEntity> LINKING_CARTS = new HashMap<>();
     public static final Map<PlayerEntity, AbstractMinecartEntity> UNLINKING_CARTS = new HashMap<>();
@@ -53,21 +55,19 @@ public class Linkart implements ModInitializer {
 
     public static void loadConfig() {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        Path config = FabricLoader.getInstance().getConfigDir().resolve("linkart.json");
-        if (Files.exists(config)) {
-            try {
-                CONFIG = gson.fromJson(Files.newBufferedReader(config), LinkartConfiguration.class);
-                Files.write(config, gson.toJson(CONFIG).getBytes());
+        if (Files.exists(CONFIG_PATH)) {
+            try(var reader = Files.newBufferedReader(CONFIG_PATH)) {
+                CONFIG = gson.fromJson(reader, LinkartConfiguration.class);
+                Files.write(CONFIG_PATH, gson.toJson(CONFIG).getBytes());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Failed to load linkart config!", e);
             }
         } else {
-            CONFIG = new LinkartConfiguration();
             try {
-                Files.createFile(config);
-                Files.write(config, gson.toJson(CONFIG).getBytes());
+                CONFIG = new LinkartConfiguration();
+                Files.write(CONFIG_PATH, gson.toJson(CONFIG).getBytes());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Failed to create linkart config!", e);
             }
         }
     }
