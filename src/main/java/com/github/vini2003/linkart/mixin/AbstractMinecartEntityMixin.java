@@ -85,7 +85,6 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
                 // Calculate new velocity
                 vec3d = vec3d.normalize().multiply(dist);
-                vec3d.multiply(Linkart.CONFIG.velocityMultiplier);
 
                 if (dist <= 1) {
                     // Go slower (1.0->0.8) the closer (1->0) we are
