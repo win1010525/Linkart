@@ -16,7 +16,10 @@ import java.lang.invoke.MethodType;
 import java.util.function.Supplier;
 
 public class LinkartCommand {
-    private static Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
+
+    private static MethodHandle cachedHandle;
+    private static boolean newBehavior;
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("linkart")
@@ -25,23 +28,38 @@ public class LinkartCommand {
                                 .executes(context -> {
                                     Linkart.loadConfig();
 
-                                    MappingResolver resolver = FabricLoader.getInstance().getMappingResolver();
-                                    try {
-                                        String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Ljava/util/function/Supplier;Z)V");
-                                        MethodHandle sendFeedback = MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Supplier.class, boolean.class));
-                                        sendFeedback.invokeWithArguments(context.getSource(), ((Supplier<Text>)() -> TextUtil.literal("reloaded linkart config")), true);
-                                    } catch (Throwable e) {
+                                    if (cachedHandle == null) {
+                                        MappingResolver resolver = FabricLoader.getInstance().getMappingResolver();
                                         try {
-                                            String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Lnet/minecraft/class_2561;Z)V");
-                                            MethodHandle sendFeedback = MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Text.class, boolean.class));
-                                            sendFeedback.invokeWithArguments(context.getSource(), TextUtil.literal("reloaded linkart config"), true);
-                                        } catch (Throwable ex) {
-                                            LOGGER.error(ex);
-                                            throw new RuntimeException(ex);
+                                            String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Ljava/util/function/Supplier;Z)V");
+                                            cachedHandle = MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Supplier.class, boolean.class));
+                                            newBehavior = true;
+                                        } catch (Throwable e) {
+                                            try {
+                                                String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Lnet/minecraft/class_2561;Z)V");
+                                                cachedHandle = MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Text.class, boolean.class));
+                                                newBehavior = false;
+                                            } catch (Throwable ex) {
+                                                LOGGER.error(ex);
+                                                throw new RuntimeException(ex);
+                                            }
                                         }
                                     }
 
+                                    invoke(cachedHandle, context.getSource(), newBehavior ?
+                                            ((Supplier<Text>)() -> TextUtil.literal("reloaded linkart config")) :
+                                            TextUtil.literal("reloaded linkart config"), true);
+
                                     return 1;
                                 }))));
+    }
+
+    private static void invoke(MethodHandle handle, Object... args) {
+        try {
+            handle.invokeWithArguments(args);
+        } catch (Throwable e) {
+            LOGGER.error(e);
+            throw new RuntimeException(e);
+        }
     }
 }
