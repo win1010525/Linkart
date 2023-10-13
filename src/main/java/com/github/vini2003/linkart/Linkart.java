@@ -14,7 +14,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.item.Item;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
 
@@ -31,7 +32,7 @@ public class Linkart implements ModInitializer {
     public static LinkartConfiguration CONFIG;
     public static final Map<PlayerEntity, AbstractMinecartEntity> LINKING_CARTS = new HashMap<>();
     public static final Map<PlayerEntity, AbstractMinecartEntity> UNLINKING_CARTS = new HashMap<>();
-    public static final TagKey<Item> LINKERS = TagKey.of(RegistryKeys.ITEM, new Identifier(ID, "linkers"));
+    public static final TagKey<Item> LINKERS = TagKey.of(itemKey(), new Identifier(ID, "linkers"));
 
     static {
         loadConfig();
@@ -70,5 +71,9 @@ public class Linkart implements ModInitializer {
                 throw new RuntimeException("Failed to create linkart config!", e);
             }
         }
+    }
+
+    private static RegistryKey<? extends Registry<Item>> itemKey() {
+        return RegistryKey.ofRegistry(Identifier.tryParse("item"));
     }
 }
