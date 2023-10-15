@@ -19,7 +19,8 @@ public class LinkartCommand {
     private static final Logger LOGGER = LogManager.getLogger();
 
     private static MethodHandle cachedHandle;
-    private static boolean newBehavior;
+
+    private static final Supplier<Text> RELOADED = () -> TextUtil.literal("reloaded linkart config");
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("linkart")
@@ -32,13 +33,13 @@ public class LinkartCommand {
                                         MappingResolver resolver = FabricLoader.getInstance().getMappingResolver();
                                         try {
                                             String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Ljava/util/function/Supplier;Z)V");
-                                            cachedHandle = MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Supplier.class, boolean.class));
-                                            newBehavior = true;
+                                            cachedHandle = MethodHandles.insertArguments(MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Supplier.class, boolean.class)),
+                                                    1, RELOADED, true);
                                         } catch (Throwable e) {
                                             try {
                                                 String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Lnet/minecraft/class_2561;Z)V");
-                                                cachedHandle = MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Text.class, boolean.class));
-                                                newBehavior = false;
+                                                cachedHandle = MethodHandles.insertArguments(MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Text.class, boolean.class)),
+                                                        1, RELOADED.get(), true);
                                             } catch (Throwable ex) {
                                                 LOGGER.error(ex);
                                                 throw new RuntimeException(ex);
@@ -46,9 +47,7 @@ public class LinkartCommand {
                                         }
                                     }
 
-                                    invoke(cachedHandle, context.getSource(), newBehavior ?
-                                            ((Supplier<Text>)() -> TextUtil.literal("reloaded linkart config")) :
-                                            TextUtil.literal("reloaded linkart config"), true);
+                                    invoke(cachedHandle, context.getSource());
 
                                     return 1;
                                 }))));
