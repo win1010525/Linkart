@@ -17,21 +17,13 @@ import java.util.Set;
 public class LoadingCarts extends PersistentState {
 
     public static LoadingCarts getOrCreate(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate((nbt) -> {
-            LoadingCarts carts = new LoadingCarts(world);
-            carts.readNbt(nbt);
-            return carts;
-        }, () -> new LoadingCarts(world), "linkart_loading_carts");
+        return world.getPersistentStateManager().getOrCreate(
+                (nbt) -> new LoadingCarts().readNbt(nbt),
+                LoadingCarts::new, "linkart_loading_carts");
     }
-
-    private final ServerWorld world;
 
     private final Set<BlockPos> chunksToReload = new HashSet<>();
     private final Set<AbstractMinecartEntity> cartsToBlockPos = new HashSet<>();
-
-    public LoadingCarts(ServerWorld world) {
-        this.world = world;
-    }
 
     @Override
     public NbtCompound writeNbt(NbtCompound nbt) {
@@ -44,18 +36,19 @@ public class LoadingCarts extends PersistentState {
         return nbt;
     }
 
-    public void readNbt(NbtCompound nbt) {
+    public LoadingCarts readNbt(NbtCompound nbt) {
         NbtList list = nbt.getList("chunksToSave", NbtElement.LONG_TYPE);
         for (NbtElement element : list) {
             chunksToReload.add(BlockPos.fromLong(((NbtLong) element).longValue()));
         }
+        return this;
     }
 
-    public void tick() {
+    public void tick(ServerWorld world) {
         if (!chunksToReload.isEmpty()) {
             for (BlockPos pos : chunksToReload) {
                 ChunkPos chunkPos = new ChunkPos(pos);
-                this.world.getChunkManager().addTicket(ChunkTicketType.PORTAL, chunkPos, 4, pos);
+                world.getChunkManager().addTicket(ChunkTicketType.PORTAL, chunkPos, 4, pos);
             }
             chunksToReload.clear();
             markDirty();

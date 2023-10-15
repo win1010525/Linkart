@@ -49,7 +49,7 @@ public class Linkart implements ModInitializer {
 
         ServerTickEvents.START_WORLD_TICK.register(world -> {
             if (CONFIG.chunkloading && ((PersistentStateAccessor)world.getPersistentStateManager()).linkart$loadedStates().containsKey("linkart_loading_carts")) {
-                LoadingCarts.getOrCreate(world).tick();
+                LoadingCarts.getOrCreate(world).tick(world);
             }
         });
     }
