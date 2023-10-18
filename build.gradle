@@ -84,9 +84,15 @@ jar {
     }
 }
 
+tasks.register('printGameVersions') {
+    doLast {
+        println project.game_versions
+    }
+}
+
 tasks.register('printVersionName') {
     doLast {
-        println version.split("-")[0] + " (1.19.3-1.20.1)"
+        println version.split("-")[0] + " " + project.game_versions.replace(",", "-")
     }
 }
 
