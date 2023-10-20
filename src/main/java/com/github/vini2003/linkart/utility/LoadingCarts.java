@@ -1,5 +1,6 @@
 package com.github.vini2003.linkart.utility;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -10,16 +11,39 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.PersistentState;
+import net.minecraft.world.PersistentStateManager;
 
+import java.lang.invoke.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class LoadingCarts extends PersistentState {
 
+    private static Function<PersistentStateManager, LoadingCarts> GETTER;
+    static {
+        Supplier<LoadingCarts> supplier = LoadingCarts::new;
+        Function<NbtCompound, LoadingCarts> function = nbt -> new LoadingCarts().readNbt(nbt);
+        try {
+            Type<LoadingCarts> type = new Type<>(supplier, function, null);//thanks, FAPI
+            GETTER = manager -> manager.getOrCreate(type, "linkart_loading_carts");
+        } catch (Throwable e) {
+            String mth = FabricLoader.getInstance().getMappingResolver().mapMethodName("intermediary", "net.minecraft.class_26", "method_17924", "(Ljava/util/function/Function;Ljava/util/function/Supplier;Ljava/lang/String;)Lnet/minecraft/class_18;");
+            MethodHandle h = Lambdas.supply(() -> MethodHandles.lookup().findVirtual(PersistentStateManager.class, mth, MethodType.methodType(PersistentState.class, Function.class, Supplier.class, String.class)));
+
+            //Not pretty, but is faster than reflection and handles.
+            interface Invoker {
+                PersistentState invoke(PersistentStateManager manager, Function<?,?> f, Supplier<?> s, String name);
+            }
+
+            Invoker invoker = Lambdas.handle(MethodHandles.lookup(), Invoker.class, h);
+            GETTER = manager -> (LoadingCarts) invoker.invoke(manager, function, supplier, "linkart_loading_carts");;
+        }
+    }
+
     public static LoadingCarts getOrCreate(ServerWorld world) {
-        return world.getPersistentStateManager().getOrCreate(
-                (nbt) -> new LoadingCarts().readNbt(nbt),
-                LoadingCarts::new, "linkart_loading_carts");
+        return GETTER.apply(world.getPersistentStateManager());
     }
 
     private final Set<BlockPos> chunksToReload = new HashSet<>();
