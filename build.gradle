@@ -92,7 +92,7 @@ tasks.register('printGameVersions') {
 
 tasks.register('printVersionName') {
     doLast {
-        println version.split("-")[0] + " " + project.game_versions.replace(",", "-")
+        println version.split("-")[0] + " (" + project.game_versions.replace(" ", "-").replaceAll("[>=<]", "") + ")"
     }
 }
 
