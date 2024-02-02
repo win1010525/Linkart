@@ -1,6 +1,17 @@
 
 name: publish
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "The type of this version. e.g alpha"
+        type: choice
+        default: beta
+        options:
+          - release
+          - beta
+          - alpha
+        required: false
 
 jobs:
   publish:
@@ -25,9 +36,9 @@ jobs:
           echo "VERSION_PLAIN=$(${{github.workspace}}/gradlew -q printVersion)" >> $GITHUB_ENV
           echo "GAME_VERSIONS=$(${{github.workspace}}/gradlew -q printGameVersions)" >> $GITHUB_ENV
       - name: Publish Minecraft mods
-        uses: Kir-Antipov/mc-publish@v3.3
+        uses: Kir-Antipov/mc-publish@v3.3.0
         with:
-          version-type: beta
+          version-type: ${{ inputs.version_type }}
           changelog-file: CHANGELOG.md
           name: ${{ env.VERSION_INFORMATION }}
           version: ${{ env.VERSION_PLAIN }}
