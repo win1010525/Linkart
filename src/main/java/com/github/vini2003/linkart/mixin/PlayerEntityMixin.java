@@ -65,7 +65,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
 
                                 linkart$spawnChainParticles(minecart, duck);
 
-                                duck.linkart$setLinkItem(null);
+                                duck.linkart$setLinkItem(ItemStack.EMPTY);
 
                                 cir.setReturnValue(ActionResult.SUCCESS);
                             } else {

@@ -125,7 +125,7 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
         linkart$spawnChainParticles((AbstractMinecartEntity) (Object) this, this);
 
-        duck.linkart$setLinkItem(null);
+        duck.linkart$setLinkItem(ItemStack.EMPTY);
     }
 
     @Inject(at = @At("HEAD"), method = "pushAwayFrom", cancellable = true)
@@ -198,6 +198,6 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
     @Override
     public void linkart$setLinkItem(ItemStack linkItem) {
-        this.linkart$itemStack = linkItem;
+        this.linkart$itemStack = linkItem == null ? ItemStack.EMPTY : linkItem;
     }
 }
