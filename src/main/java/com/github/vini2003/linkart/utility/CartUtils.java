@@ -22,8 +22,10 @@ public class CartUtils {
         entity.linkart$getFollowing().linkart$setFollower(null);
         entity.setVelocity(0, 0, 0);
 
-        entity.dropStack(entity.linkart$getLinkItem());
-        spawnChainParticles(entity);
+        if (!entity.linkart$getLinkItem().isEmpty()) {
+            entity.dropStack(entity.linkart$getLinkItem());
+            spawnChainParticles(entity);
+        }
 
         entity.linkart$setLinkItem(ItemStack.EMPTY);
         entity.linkart$setFollowing(null);
