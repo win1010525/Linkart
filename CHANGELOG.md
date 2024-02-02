@@ -6,3 +6,4 @@
 * Fixed `getOtherEntities` in `adjustMovementForCollisions` being called for every entity instead of just minecarts.
 * Every method in the `LinkableMinecart` interface is now `default`.
 * `linkart$getLinkItem` should no longer return `null`.
+* Added an experimental option to change distance between carts. `distance` in the config.
