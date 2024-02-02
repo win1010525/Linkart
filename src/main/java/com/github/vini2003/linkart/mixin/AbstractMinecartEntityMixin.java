@@ -36,7 +36,7 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
     @Unique
     private UUID linkart$followerUUID;
     @Unique
-    private ItemStack linkart$itemStack;
+    private ItemStack linkart$itemStack = ItemStack.EMPTY;
 
     public AbstractMinecartEntityMixin(EntityType<?> type, World world) {
         super(type, world);

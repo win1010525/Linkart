@@ -4,10 +4,13 @@ import com.github.vini2003.linkart.api.LinkableMinecart;
 import com.github.vini2003.linkart.utility.CollisionUtils;
 import net.minecraft.block.AbstractRailBlock;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,6 +27,8 @@ public abstract class EntityMixin {
 
     @Shadow
     public abstract Box getBoundingBox();
+
+    @Shadow @Nullable public abstract ItemEntity dropStack(ItemStack stack);
 
     @Inject(at = @At("HEAD"), method = "remove")
     void linkart$removeLink(CallbackInfo callbackInformation) {
@@ -53,6 +58,13 @@ public abstract class EntityMixin {
                     cir.cancel();
                 }
             }
+        }
+    }
+
+    @Inject(at = @At("HEAD"), method = "kill")
+    private void linkart$kill(CallbackInfo ci) {
+        if ((Object) this instanceof LinkableMinecart minecart) {
+            this.dropStack(minecart.linkart$getLinkItem());
         }
     }
 }
