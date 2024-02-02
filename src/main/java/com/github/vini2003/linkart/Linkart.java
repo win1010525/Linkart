@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -22,7 +23,7 @@ import net.minecraft.util.Identifier;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 public class Linkart implements ModInitializer {
@@ -30,9 +31,10 @@ public class Linkart implements ModInitializer {
     public static final String ID = "linkart";
     public static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("linkart.json");
     public static LinkartConfiguration CONFIG;
-    public static final Map<PlayerEntity, AbstractMinecartEntity> LINKING_CARTS = new HashMap<>();
-    public static final Map<PlayerEntity, AbstractMinecartEntity> UNLINKING_CARTS = new HashMap<>();
     public static final TagKey<Item> LINKERS = TagKey.of(itemKey(), new Identifier(ID, "linkers"));
+
+    public static final Map<PlayerEntity, AbstractMinecartEntity> LINKING_CARTS = new IdentityHashMap<>();
+    public static final Map<PlayerEntity, AbstractMinecartEntity> UNLINKING_CARTS = new IdentityHashMap<>();
 
     static {
         loadConfig();
@@ -45,6 +47,11 @@ public class Linkart implements ModInitializer {
 
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (CONFIG.chunkloading) LoadingCarts.getOrCreate(world);
+        });
+
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+            LINKING_CARTS.clear();
+            UNLINKING_CARTS.clear();
         });
 
         ServerTickEvents.START_WORLD_TICK.register(world -> {

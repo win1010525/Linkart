@@ -4,15 +4,28 @@ import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.item.ItemStack;
 
 public interface LinkableMinecart {
-    AbstractMinecartEntity linkart$getFollowing();
 
-    void linkart$setFollowing(AbstractMinecartEntity following);
+    default AbstractMinecartEntity linkart$getFollowing() {
+        throw new IllegalStateException("Implemented via mixin");
+    }
 
-    AbstractMinecartEntity linkart$getFollower();
+    default void linkart$setFollowing(AbstractMinecartEntity following) {
+        throw new IllegalStateException("Implemented via mixin");
+    }
 
-    void linkart$setFollower(AbstractMinecartEntity follower);
+    default AbstractMinecartEntity linkart$getFollower() {
+        throw new IllegalStateException("Implemented via mixin");
+    }
 
-    ItemStack linkart$getLinkItem();
+    default void linkart$setFollower(AbstractMinecartEntity follower) {
+        throw new IllegalStateException("Implemented via mixin");
+    }
 
-    void linkart$setLinkItem(ItemStack linkItem);
+    default ItemStack linkart$getLinkItem() {
+        throw new IllegalStateException("Implemented via mixin");
+    }
+
+    default void linkart$setLinkItem(ItemStack linkItem) {
+        throw new IllegalStateException("Implemented via mixin");
+    }
 }

@@ -2,17 +2,14 @@ package com.github.vini2003.linkart.mixin;
 
 import com.github.vini2003.linkart.Linkart;
 import com.github.vini2003.linkart.api.LinkableMinecart;
+import com.github.vini2003.linkart.utility.CartUtils;
 import com.github.vini2003.linkart.utility.CollisionUtils;
 import com.github.vini2003.linkart.utility.LoadingCarts;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.particle.ItemStackParticleEffect;
-import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
@@ -42,27 +39,11 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
         super(type, world);
     }
 
-    @Unique
-    private static void linkart$spawnChainParticles(AbstractMinecartEntity entity, LinkableMinecart duck) {
-        if (!entity.getWorld().isClient()) {
-            ((ServerWorld) entity.getWorld()).spawnParticles(new ItemStackParticleEffect(ParticleTypes.ITEM, duck.linkart$getLinkItem()), entity.getX(), entity.getY() + 0.3, entity.getZ(), 15, 0.2, 0.2, 0.2, 0.2);
-        }
-    }
-
-    @Unique
-    private static boolean linkart$approximatelyZero(double a) {
-        return Math.abs(0 - a) < 0.00029146489604938;
-    }
-
     @Inject(at = @At("HEAD"), method = "tick")
     private void linkart$tick(CallbackInfo ci) {
         if (!getWorld().isClient()) {
+            AbstractMinecartEntity cast = (AbstractMinecartEntity) (Object) this;
             if (linkart$getFollowing() != null) {
-                if (linkart$getFollowing().isRemoved() || this.isRemoved()) {
-                    linkart$unlink();
-                    return;
-                }
-
                 Vec3d pos = getPos();
                 Vec3d pos2 = linkart$getFollowing().getPos();
                 double dist = Math.abs(pos.distanceTo(pos2)) - 1.2;
@@ -95,37 +76,20 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
                     if (dist <= Linkart.CONFIG.pathfindingDistance) {
                         setVelocity(vec3d);
                     } else {
-                        linkart$unlink();
+                        CartUtils.unlink(cast);
                     }
                 }
             }
 
             if (Linkart.CONFIG.chunkloading) {
-                if (linkart$getFollower() != null && !linkart$approximatelyZero(this.getVelocity().length())) {
+                if (linkart$getFollower() != null && !CartUtils.approximatelyZero(this.getVelocity().length())) {
                     ((ServerWorld) this.getWorld()).getChunkManager().addTicket(ChunkTicketType.PORTAL, this.getChunkPos(), Linkart.CONFIG.chunkloadingRadius, this.getBlockPos());
-                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).addCart((AbstractMinecartEntity) (Object) this);
+                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).addCart(cast);
                 } else {
-                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).removeCart((AbstractMinecartEntity) (Object) this);
+                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).removeCart(cast);
                 }
             }
         }
-    }
-
-    @Unique
-    private void linkart$unlink() {
-        LinkableMinecart duck = (LinkableMinecart) linkart$getFollowing();
-
-        duck.linkart$setFollower(null);
-        linkart$setFollowing(null);
-        setVelocity(0, 0, 0);
-
-        ItemEntity itemEntity = new ItemEntity(getWorld(), getX(), getY(), getZ(), Items.CHAIN.getDefaultStack());
-        itemEntity.setToDefaultPickupDelay();
-        getWorld().spawnEntity(itemEntity);
-
-        linkart$spawnChainParticles((AbstractMinecartEntity) (Object) this, this);
-
-        duck.linkart$setLinkItem(ItemStack.EMPTY);
     }
 
     @Inject(at = @At("HEAD"), method = "pushAwayFrom", cancellable = true)

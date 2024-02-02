@@ -30,5 +30,12 @@
     "fabricloader": ">=${loader_version}",
     "fabric": "*",
     "minecraft": ">=1.18.2"
+  },
+  "custom": {
+    "loom:injected_interfaces": {
+      "net/minecraft/class_1688": [
+        "com/github/vini2003/linkart/api/LinkableMinecart"
+      ]
+    }
   }
 }
