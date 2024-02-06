@@ -34,7 +34,7 @@ public abstract class EntityMixin {
             for (Entity entity : collisions) {
                 if (!CollisionUtils.shouldCollide(minecart, entity) && minecart.getWorld().getBlockState(minecart.getBlockPos()).getBlock() instanceof AbstractRailBlock) {
                     cir.setReturnValue(movement);
-                    cir.cancel();
+                    return;
                 }
             }
         }
