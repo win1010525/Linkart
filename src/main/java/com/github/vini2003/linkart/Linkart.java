@@ -4,8 +4,7 @@ import com.github.vini2003.linkart.configuration.LinkartConfiguration;
 import com.github.vini2003.linkart.mixin.PersistentStateAccessor;
 import com.github.vini2003.linkart.utility.LinkartCommand;
 import com.github.vini2003.linkart.utility.LoadingCarts;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import me.melontini.dark_matter.api.base.config.ConfigManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -19,17 +18,18 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.Identifier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
 public class Linkart implements ModInitializer {
 
     public static final String ID = "linkart";
-    public static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("linkart.json");
+    public static final Logger LOGGER = LogManager.getLogger(ID);
+    public static final ConfigManager<LinkartConfiguration> CONFIG_MANAGER = ConfigManager.of(LinkartConfiguration.class, ID, LinkartConfiguration::new)
+            .exceptionHandler((e, stage, path) -> LOGGER.error("Failed to {} {}", stage.name().toLowerCase(), FabricLoader.getInstance().getGameDir().relativize(path)));
     public static LinkartConfiguration CONFIG;
     public static final TagKey<Item> LINKERS = TagKey.of(itemKey(), new Identifier(ID, "linkers"));
 
@@ -62,22 +62,8 @@ public class Linkart implements ModInitializer {
     }
 
     public static void loadConfig() {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        if (Files.exists(CONFIG_PATH)) {
-            try(var reader = Files.newBufferedReader(CONFIG_PATH)) {
-                CONFIG = gson.fromJson(reader, LinkartConfiguration.class);
-                Files.write(CONFIG_PATH, gson.toJson(CONFIG).getBytes());
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to load linkart config!", e);
-            }
-        } else {
-            try {
-                CONFIG = new LinkartConfiguration();
-                Files.write(CONFIG_PATH, gson.toJson(CONFIG).getBytes());
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to create linkart config!", e);
-            }
-        }
+        CONFIG = CONFIG_MANAGER.load(FabricLoader.getInstance().getConfigDir());
+        CONFIG_MANAGER.save(FabricLoader.getInstance().getConfigDir(), CONFIG);
     }
 
     private static RegistryKey<? extends Registry<Item>> itemKey() {

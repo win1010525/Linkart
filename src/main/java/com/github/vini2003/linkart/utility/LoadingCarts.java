@@ -1,6 +1,7 @@
 package com.github.vini2003.linkart.utility;
 
-import net.fabricmc.loader.api.FabricLoader;
+import me.melontini.dark_matter.api.base.util.Exceptions;
+import me.melontini.dark_matter.api.base.util.Mapper;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -21,16 +22,15 @@ import java.util.function.Supplier;
 
 public class LoadingCarts extends PersistentState {
 
-    private static Function<PersistentStateManager, LoadingCarts> GETTER;
-    static {
+    private static final Function<PersistentStateManager, LoadingCarts> GETTER = Exceptions.supply(() -> {
         Supplier<LoadingCarts> supplier = LoadingCarts::new;
         Function<NbtCompound, LoadingCarts> function = nbt -> new LoadingCarts().readNbt(nbt);
         try {
             Type<LoadingCarts> type = new Type<>(supplier, function, null);//thanks, FAPI
-            GETTER = manager -> manager.getOrCreate(type, "linkart_loading_carts");
+            return manager -> manager.getOrCreate(type, "linkart_loading_carts");
         } catch (Throwable e) {
-            String mth = FabricLoader.getInstance().getMappingResolver().mapMethodName("intermediary", "net.minecraft.class_26", "method_17924", "(Ljava/util/function/Function;Ljava/util/function/Supplier;Ljava/lang/String;)Lnet/minecraft/class_18;");
-            MethodHandle h = Lambdas.supply(() -> MethodHandles.lookup().findVirtual(PersistentStateManager.class, mth, MethodType.methodType(PersistentState.class, Function.class, Supplier.class, String.class)));
+            String mth = Mapper.mapMethod(PersistentStateManager.class, "method_17924", MethodType.methodType(PersistentState.class, Function.class, Supplier.class, String.class));
+            MethodHandle h = Exceptions.supply(() -> MethodHandles.lookup().findVirtual(PersistentStateManager.class, mth, MethodType.methodType(PersistentState.class, Function.class, Supplier.class, String.class)));
 
             //Not pretty, but is faster than reflection and handles.
             interface Invoker {
@@ -38,9 +38,9 @@ public class LoadingCarts extends PersistentState {
             }
 
             Invoker invoker = Lambdas.handle(MethodHandles.lookup(), Invoker.class, h);
-            GETTER = manager -> (LoadingCarts) invoker.invoke(manager, function, supplier, "linkart_loading_carts");;
+            return manager -> (LoadingCarts) invoker.invoke(manager, function, supplier, "linkart_loading_carts");
         }
-    }
+    });
 
     public static LoadingCarts getOrCreate(ServerWorld world) {
         return GETTER.apply(world.getPersistentStateManager());

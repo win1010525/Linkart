@@ -2,8 +2,8 @@ package com.github.vini2003.linkart.utility;
 
 import com.github.vini2003.linkart.Linkart;
 import com.mojang.brigadier.CommandDispatcher;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.MappingResolver;
+import me.melontini.dark_matter.api.base.util.Exceptions;
+import me.melontini.dark_matter.api.base.util.Mapper;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -18,9 +18,18 @@ import java.util.function.Supplier;
 public class LinkartCommand {
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static MethodHandle cachedHandle;
-
     private static final Supplier<Text> RELOADED = () -> TextUtil.literal("reloaded linkart config");
+    private static final MethodHandle cachedHandle = Exceptions.supply(() -> {
+        try {
+            String mthd = Mapper.mapMethod(ServerCommandSource.class, "method_9226", MethodType.methodType(void.class, Supplier.class, boolean.class));
+            return MethodHandles.insertArguments(MethodHandles.lookup().findVirtual(ServerCommandSource.class, mthd, MethodType.methodType(void.class, Supplier.class, boolean.class)),
+                    1, RELOADED, true);
+        } catch (Throwable e) {
+            String mthd = Mapper.mapMethod(ServerCommandSource.class, "method_9226", MethodType.methodType(void.class, Text.class, boolean.class));
+            return MethodHandles.insertArguments(MethodHandles.lookup().findVirtual(ServerCommandSource.class, mthd, MethodType.methodType(void.class, Text.class, boolean.class)),
+                    1, RELOADED.get(), true);
+        }
+    });
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("linkart")
@@ -28,34 +37,14 @@ public class LinkartCommand {
                         .then(CommandManager.literal("reload")
                                 .executes(context -> {
                                     Linkart.loadConfig();
-
-                                    if (cachedHandle == null) {
-                                        MappingResolver resolver = FabricLoader.getInstance().getMappingResolver();
-                                        try {
-                                            String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Ljava/util/function/Supplier;Z)V");
-                                            cachedHandle = MethodHandles.insertArguments(MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Supplier.class, boolean.class)),
-                                                    1, RELOADED, true);
-                                        } catch (Throwable e) {
-                                            try {
-                                                String mthd = resolver.mapMethodName("intermediary", "net.minecraft.class_2168", "method_9226", "(Lnet/minecraft/class_2561;Z)V");
-                                                cachedHandle = MethodHandles.insertArguments(MethodHandles.lookup().findVirtual(context.getSource().getClass(), mthd, MethodType.methodType(void.class, Text.class, boolean.class)),
-                                                        1, RELOADED.get(), true);
-                                            } catch (Throwable ex) {
-                                                LOGGER.error(ex);
-                                                throw new RuntimeException(ex);
-                                            }
-                                        }
-                                    }
-
-                                    invoke(cachedHandle, context.getSource());
-
+                                    invoke(context.getSource());
                                     return 1;
                                 }))));
     }
 
-    private static void invoke(MethodHandle handle, Object... args) {
+    private static void invoke(Object... args) {
         try {
-            handle.invokeWithArguments(args);
+            LinkartCommand.cachedHandle.invokeWithArguments(args);
         } catch (Throwable e) {
             LOGGER.error(e);
             throw new RuntimeException(e);
