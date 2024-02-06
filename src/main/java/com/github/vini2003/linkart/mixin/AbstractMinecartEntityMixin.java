@@ -25,10 +25,15 @@ import java.util.UUID;
 
 @Mixin({AbstractMinecartEntity.class})
 public abstract class AbstractMinecartEntityMixin extends Entity implements LinkableMinecart {
+
     // Used to smooth out acceleration
-    private static double SAFE_SPEEDUP_THRESHOLD = 0.4;
-    private static double SMOOTH_SPEEDUP_AMOUNT = 0.2;
-    private static double SAFE_SPEEDUP_DIFFERENCE = 0.02;
+    @Unique
+    private static final double SAFE_SPEEDUP_THRESHOLD = 0.4;
+    @Unique
+    private static final double SMOOTH_SPEEDUP_AMOUNT = 0.2;
+    @Unique
+    private static final double SAFE_SPEEDUP_DIFFERENCE = 0.02;
+    @Unique
     private double lastMovementLength = 0.0D;  // Movement length on previous tick
 
     @Unique
@@ -46,46 +51,46 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
         super(type, world);
     }
 
-    private static double linkart$limitMovementLength(AbstractMinecartEntity cart, double targetMovementLength) {
-        LinkableMinecart linkart$cart = (LinkableMinecart) (Object) cart;
-        double cartLastMovementLength = ((AbstractMinecartEntityMixin) (Object) cart).lastMovementLength;
+    @Unique
+    private double limitMovementLength(double targetMovementLength) {
+        double cartLastMovementLength = this.lastMovementLength;
 
-        boolean isLeading = (linkart$cart.linkart$getFollowing() == null && linkart$cart.linkart$getFollower() != null);
+        boolean isLeading = (this.linkart$getFollowing() == null && this.linkart$getFollower() != null);
         // Don't limit if we are not the leading minecart
-        if (!isLeading)
-            return targetMovementLength;
+        if (!isLeading) return targetMovementLength;
         // Don't limit if we are below the safe speedup threshold
-        if (targetMovementLength <= SAFE_SPEEDUP_THRESHOLD)
-            return targetMovementLength;
+        if (targetMovementLength <= SAFE_SPEEDUP_THRESHOLD) return targetMovementLength;
 
-        AbstractMinecartEntity follower = linkart$cart.linkart$getFollower();
+        AbstractMinecartEntity follower = this.linkart$getFollower();
         // Check if there are follower minecarts not at our speed
         while (follower != null) {
             double followerLastMovementLength = ((AbstractMinecartEntityMixin) (Object) follower).lastMovementLength;
             if (Math.abs(followerLastMovementLength - cartLastMovementLength) > SAFE_SPEEDUP_DIFFERENCE)
                 // If so, maintain same speed
                 return cartLastMovementLength;
-            follower = ((LinkableMinecart) follower).linkart$getFollower();
+            follower = follower.linkart$getFollower();
         }
 
         // Otherwise increase our speed slowly
         return Math.min(Math.max(
-            cartLastMovementLength + SMOOTH_SPEEDUP_AMOUNT,
-            SAFE_SPEEDUP_THRESHOLD),  // min
-            targetMovementLength);  // max
+                        cartLastMovementLength + SMOOTH_SPEEDUP_AMOUNT,
+                        SAFE_SPEEDUP_THRESHOLD),  // min
+                targetMovementLength);  // max
     }
 
     // Ensure the train doesn't break apart (especially if other minecart mods increase speed)
     @ModifyArg(method = "moveOnRail", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/vehicle/AbstractMinecartEntity;move(Lnet/minecraft/entity/MovementType;Lnet/minecraft/util/math/Vec3d;)V", ordinal = 0))
     private Vec3d modifiedMovement(Vec3d movement) {
+        return this.linkart$modifyMovement(movement);
+    }
+
+    @Override
+    public Vec3d linkart$modifyMovement(Vec3d movement) {
         if (this.lastMovementLength < movement.length()) {
             final double targetMovementLength = movement.length();
 
             // Limit the movement length
-            movement = movement.multiply(linkart$limitMovementLength(
-                (AbstractMinecartEntity) (Object) this,
-                targetMovementLength
-            ) / targetMovementLength);
+            movement = movement.multiply(limitMovementLength(targetMovementLength) / targetMovementLength);
         }
 
         this.lastMovementLength = movement.length();
@@ -107,10 +112,10 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
                 Vec3d vel = getVelocity();
                 Vec3d vel2 = linkart$getFollowing().getVelocity();
                 boolean differentDirection = (
-                    vel.length() > 0.15
-                    && vel2.length() > 0.005
-                    && vel.normalize().distanceTo(vel2.normalize()) > 1.42
-                    && pos.distanceTo(pos2) > 0.5
+                        vel.length() > 0.15
+                                && vel2.length() > 0.005
+                                && vel.normalize().distanceTo(vel2.normalize()) > 1.42
+                                && pos.distanceTo(pos2) > 0.5
                 );
 
                 if (differentDirection) {
@@ -124,7 +129,7 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
                 if (dist <= 1) {
                     // Go slower (1.0->0.8) the closer (1->0) we are
-                    setVelocity(vec3d.multiply(0.8 + 0.2*Math.abs(dist)));
+                    setVelocity(vec3d.multiply(0.8 + 0.2 * Math.abs(dist)));
                 } else {
                     if (dist <= Linkart.CONFIG.pathfindingDistance) {
                         setVelocity(vec3d);
