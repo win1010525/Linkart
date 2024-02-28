@@ -99,102 +99,82 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
     @Inject(at = @At("HEAD"), method = "tick")
     private void linkart$tick(CallbackInfo ci) {
-        if (!getWorld().isClient()) {
-            AbstractMinecartEntity cast = (AbstractMinecartEntity) (Object) this;
-            if (linkart$getFollowing() != null) {
-                Vec3d pos = getPos();
-                Vec3d pos2 = linkart$getFollowing().getPos();
-                double dist = Math.max(Math.abs(pos.distanceTo(pos2)) - Linkart.CONFIG.distance, 0);
-                Vec3d vec3d = pos.relativize(pos2);
-                vec3d = vec3d.multiply(Linkart.CONFIG.velocityMultiplier);
+        if (getWorld().isClient()) return;
+        AbstractMinecartEntity cast = (AbstractMinecartEntity) (Object) this;
+        if (linkart$getFollowing() == null) return;
 
-                // Check if we are on a sharp curve
-                Vec3d vel = getVelocity();
-                Vec3d vel2 = linkart$getFollowing().getVelocity();
-                boolean differentDirection = (
-                        vel.length() > 0.15
-                                && vel2.length() > 0.005
-                                && vel.normalize().distanceTo(vel2.normalize()) > 1.42
-                                && pos.distanceTo(pos2) > 0.5
-                );
+        Vec3d pos = getPos();
+        Vec3d pos2 = linkart$getFollowing().getPos();
+        double dist = Math.max(Math.abs(pos.distanceTo(pos2)) - Linkart.CONFIG.distance, 0);
+        Vec3d vec3d = pos.relativize(pos2);
+        vec3d = vec3d.multiply(Linkart.CONFIG.velocityMultiplier);
 
-                if (differentDirection) {
-                    // Keep ourselves going at same speed if on curve
-                    dist += Linkart.CONFIG.distance;
-                    vec3d = vel;
-                }
+        // Check if we are on a sharp curve
+        Vec3d vel = getVelocity();
+        Vec3d vel2 = linkart$getFollowing().getVelocity();
+        boolean differentDirection = (
+                vel.length() > 0.15
+                        && vel2.length() > 0.005
+                        && vel.normalize().distanceTo(vel2.normalize()) > 1.42
+                        && pos.distanceTo(pos2) > 0.5
+        );
 
-                // Calculate new velocity
-                vec3d = vec3d.normalize().multiply(dist);
+        if (differentDirection) {
+            // Keep ourselves going at same speed if on curve
+            dist += Linkart.CONFIG.distance;
+            vec3d = vel;
+        }
 
-                if (dist <= 1) {
-                    // Go slower (1.0->0.8) the closer (1->0) we are
-                    setVelocity(vec3d.multiply(0.8 + 0.2 * Math.abs(dist)));
-                } else {
-                    if (dist <= Linkart.CONFIG.pathfindingDistance) {
-                        setVelocity(vec3d);
-                    } else {
-                        CartUtils.unlink(cast);
-                    }
-                }
-            }
+        // Calculate new velocity
+        vec3d = vec3d.normalize().multiply(dist);
 
-            if (Linkart.CONFIG.chunkloading) {
-                if (linkart$getFollower() != null && !CartUtils.approximatelyZero(this.getVelocity().length())) {
-                    ((ServerWorld) this.getWorld()).getChunkManager().addTicket(ChunkTicketType.PORTAL, this.getChunkPos(), Linkart.CONFIG.chunkloadingRadius, this.getBlockPos());
-                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).addCart(cast);
-                } else {
-                    LoadingCarts.getOrCreate((ServerWorld) getWorld()).removeCart(cast);
-                }
+        if (dist <= 1) {
+            // Go slower (1.0->0.8) the closer (1->0) we are
+            setVelocity(vec3d.multiply(0.8 + 0.2 * Math.abs(dist)));
+        } else if (dist <= Linkart.CONFIG.pathfindingDistance) {
+            setVelocity(vec3d);
+        } else {
+            CartUtils.unlinkFromParent(cast);
+        }
+
+        if (Linkart.CONFIG.chunkloading) {
+            if (linkart$getFollower() != null && !CartUtils.approximatelyZero(this.getVelocity().length())) {
+                ((ServerWorld) this.getWorld()).getChunkManager().addTicket(ChunkTicketType.PORTAL, this.getChunkPos(), Linkart.CONFIG.chunkloadingRadius, this.getBlockPos());
+                LoadingCarts.getOrCreate((ServerWorld) getWorld()).addCart(cast);
+            } else {
+                LoadingCarts.getOrCreate((ServerWorld) getWorld()).removeCart(cast);
             }
         }
     }
 
     @Inject(at = @At("HEAD"), method = "pushAwayFrom", cancellable = true)
     void onPushAway(Entity entity, CallbackInfo ci) {
-        if (!CollisionUtils.shouldCollide(this, entity)) {
-            ci.cancel();
-        }
+        if (!CollisionUtils.shouldCollide(this, entity)) ci.cancel();
     }
 
     @Inject(at = @At("RETURN"), method = "writeCustomDataToNbt")
     private void linkart$write(NbtCompound nbt, CallbackInfo ci) {
-        if (linkart$followingUUID != null) {
-            nbt.putUuid("LK-Following", linkart$followingUUID);
-        }
-
-        if (linkart$followerUUID != null) {
-            nbt.putUuid("LK-Follower", linkart$followerUUID);
-        }
-
-        if (linkart$itemStack != null) {
-            nbt.put("LK-ItemStack", linkart$itemStack.writeNbt(new NbtCompound()));
-        }
+        if (linkart$followingUUID != null) nbt.putUuid("LK-Following", linkart$followingUUID);
+        if (linkart$followerUUID != null) nbt.putUuid("LK-Follower", linkart$followerUUID);
+        if (linkart$itemStack != null) nbt.put("LK-ItemStack", linkart$itemStack.writeNbt(new NbtCompound()));
     }
 
     @Inject(at = @At("RETURN"), method = "readCustomDataFromNbt")
     private void linkart$read(NbtCompound nbt, CallbackInfo ci) {
-        if (nbt.contains("LK-Following")) {
-            linkart$followingUUID = nbt.getUuid("LK-Following");
-        }
-
-        if (nbt.contains("LK-Follower")) {
-            linkart$followerUUID = nbt.getUuid("LK-Follower");
-        }
-
-        if (nbt.contains("LK-ItemStack")) {
-            linkart$itemStack = ItemStack.fromNbt(nbt.getCompound("LK-ItemStack"));
-        }
+        if (nbt.contains("LK-Following")) linkart$followingUUID = nbt.getUuid("LK-Following");
+        if (nbt.contains("LK-Follower")) linkart$followerUUID = nbt.getUuid("LK-Follower");
+        if (nbt.contains("LK-ItemStack")) linkart$itemStack = ItemStack.fromNbt(nbt.getCompound("LK-ItemStack"));
     }
 
     @Override
     public AbstractMinecartEntity linkart$getFollowing() {
-        if (linkart$following == null) {
+        if (linkart$following == null && linkart$followingUUID != null) {
             linkart$following = (AbstractMinecartEntity) ((ServerWorld) this.getWorld()).getEntity(linkart$followingUUID);
         }
         return linkart$following;
     }
 
+    @Override
     public void linkart$setFollowing(AbstractMinecartEntity following) {
         this.linkart$following = following;
         this.linkart$followingUUID = following != null ? following.getUuid() : null;
@@ -202,12 +182,13 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
     @Override
     public AbstractMinecartEntity linkart$getFollower() {
-        if (linkart$follower == null) {
+        if (linkart$follower == null && linkart$followerUUID != null) {
             linkart$follower = (AbstractMinecartEntity) ((ServerWorld) this.getWorld()).getEntity(linkart$followerUUID);
         }
         return linkart$follower;
     }
 
+    @Override
     public void linkart$setFollower(AbstractMinecartEntity follower) {
         this.linkart$follower = follower;
         this.linkart$followerUUID = follower != null ? follower.getUuid() : null;

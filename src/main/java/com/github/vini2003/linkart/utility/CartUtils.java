@@ -18,8 +18,12 @@ public class CartUtils {
         return Math.abs(0 - a) < 0.00029146489604938;
     }
 
-    public static void unlink(AbstractMinecartEntity entity) {
+    public static void unlinkFromParent(AbstractMinecartEntity entity) {
+        if (entity == null || entity.linkart$getFollowing() == null) return;
+
         entity.linkart$getFollowing().linkart$setFollower(null);
+        entity.linkart$setFollowing(null);
+
         entity.setVelocity(0, 0, 0);
 
         if (!entity.linkart$getLinkItem().isEmpty()) {
@@ -28,10 +32,9 @@ public class CartUtils {
         }
 
         entity.linkart$setLinkItem(ItemStack.EMPTY);
-        entity.linkart$setFollowing(null);
     }
 
-    public static void link(AbstractMinecartEntity minecart, AbstractMinecartEntity to, ItemStack linkingItem) {
+    public static void linkTo(AbstractMinecartEntity minecart, AbstractMinecartEntity to, ItemStack linkingItem) {
         minecart.linkart$setFollowing(to);
         to.linkart$setFollower(minecart);
 

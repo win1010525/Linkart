@@ -1,7 +1,7 @@
 package com.github.vini2003.linkart.mixin;
 
 import com.github.vini2003.linkart.Linkart;
-import com.github.vini2003.linkart.utility.CartUtils;
+import com.github.vini2003.linkart.utility.CartOperation;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -19,6 +19,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Optional;
+
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin extends LivingEntity {
 
@@ -26,61 +28,45 @@ public abstract class PlayerEntityMixin extends LivingEntity {
         super(entityType, world);
     }
 
+    @Unique
+    private CartOperation operation;
+
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     void onInteract(Entity entity, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
         if (entity instanceof AbstractMinecartEntity minecart) {
-            if (!getWorld().isClient()) {
-                PlayerEntity player = (PlayerEntity) (Object) this;
-                ItemStack stack = player.getStackInHand(hand);
+            if (getWorld().isClient()) return;
 
-                if (stack.isIn(Linkart.LINKERS)) {
-                    if (Linkart.UNLINKING_CARTS.containsKey(player)) {
-                        AbstractMinecartEntity unlinking = Linkart.UNLINKING_CARTS.get(player);
-                        if (unlinking == null || unlinking == minecart) {
-                            fail(cir, minecart);
-                        } else {
-                            if (unlinking.linkart$getFollower() == minecart) {
-                                CartUtils.unlink(minecart);
-                                cir.setReturnValue(ActionResult.SUCCESS);
-                            } else {
-                                fail(cir, minecart);
-                            }
-                        }
-                        Linkart.UNLINKING_CARTS.remove(player);
-                    } else if (Linkart.LINKING_CARTS.containsKey(player)) {
-                        AbstractMinecartEntity linkingTo = Linkart.LINKING_CARTS.get(player);
+            PlayerEntity player = (PlayerEntity) (Object) this;
+            ItemStack stack = player.getStackInHand(hand);
 
-                        if (linkingTo == null || linkingTo == minecart ||
-                                minecart.linkart$getFollower() == linkingTo ||
-                                Math.abs(minecart.distanceTo(linkingTo) - 1) > Linkart.CONFIG.pathfindingDistance) {
-                            fail(cir, minecart);
-                        } else {
-                            if (!player.isCreative()) stack.decrement(1);
-                            CartUtils.link(minecart, linkingTo, stack);
-                            cir.setReturnValue(ActionResult.SUCCESS);
-                        }
-                        Linkart.LINKING_CARTS.remove(player);
-                    } else if (minecart.linkart$getFollower() != null) {
-                        Linkart.UNLINKING_CARTS.put(player, minecart);
-                        success(cir, minecart);
-                    } else {
-                        Linkart.LINKING_CARTS.put(player, minecart);
-                        success(cir, minecart);
-                    }
+            if (!stack.isIn(Linkart.LINKERS)) return;
+
+            if (this.operation != null) {
+                if (this.operation.minecart() != null && this.operation.minecart() != minecart &&
+                        minecart.isAlive() && this.operation.minecart().isAlive()) {
+                    var result = this.operation.operation().perform(minecart, this.operation, Optional.of(player), stack);
+                    finishOperation(cir, minecart, result);
+                } else {
+                    finishOperation(cir, minecart, ActionResult.FAIL);
                 }
+                this.operation = null;
+            } else if (minecart.linkart$getFollower() != null) {
+                this.operation = new CartOperation(CartOperation.Operation.UNLINKING, minecart);
+                finishOperation(cir, minecart, ActionResult.SUCCESS);
+            } else {
+                this.operation = new CartOperation(CartOperation.Operation.LINKING, minecart);
+                finishOperation(cir, minecart, ActionResult.SUCCESS);
             }
         }
     }
 
     @Unique
-    private static void fail(CallbackInfoReturnable<ActionResult> cir, AbstractMinecartEntity minecart) {
-        ((ServerWorld) minecart.getWorld()).spawnParticles(ParticleTypes.ANGRY_VILLAGER, minecart.getX(), minecart.getY() + 0.2, minecart.getZ(), 10, 0.5, 0.5, 0.5, 0.5);
-        cir.setReturnValue(ActionResult.FAIL);
-    }
-
-    @Unique
-    private static void success(CallbackInfoReturnable<ActionResult> cir, AbstractMinecartEntity minecart) {
-        ((ServerWorld) minecart.getWorld()).spawnParticles(ParticleTypes.HAPPY_VILLAGER, minecart.getX(), minecart.getY() + 0.2, minecart.getZ(), 10, 0.5, 0.5, 0.5, 0.5);
-        cir.setReturnValue(ActionResult.SUCCESS);
+    private void finishOperation(CallbackInfoReturnable<ActionResult> cir, AbstractMinecartEntity minecart, ActionResult result) {
+        if (result.isAccepted()) {
+            ((ServerWorld) minecart.getWorld()).spawnParticles(ParticleTypes.HAPPY_VILLAGER, minecart.getX(), minecart.getY() + 0.2, minecart.getZ(), 10, 0.5, 0.5, 0.5, 0.5);
+        } else {
+            ((ServerWorld) minecart.getWorld()).spawnParticles(ParticleTypes.ANGRY_VILLAGER, minecart.getX(), minecart.getY() + 0.2, minecart.getZ(), 10, 0.5, 0.5, 0.5, 0.5);
+        }
+        cir.setReturnValue(result);
     }
 }

@@ -21,8 +21,8 @@ public abstract class EntityMixin {
     @Inject(at = @At("HEAD"), method = "remove")
     void linkart$removeLink(CallbackInfo callbackInformation, @Local(argsOnly = true) Entity.RemovalReason reason) {
         if ((Entity) (Object) this instanceof AbstractMinecartEntity minecart && !minecart.getWorld().isClient() && reason.shouldDestroy()) {
-            if (minecart.linkart$getFollowing() != null) CartUtils.unlink(minecart);
-            if (minecart.linkart$getFollower() != null) CartUtils.unlink(minecart.linkart$getFollower());
+            CartUtils.unlinkFromParent(minecart);
+            CartUtils.unlinkFromParent(minecart.linkart$getFollower());
         }
     }
 
