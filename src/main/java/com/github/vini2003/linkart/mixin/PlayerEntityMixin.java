@@ -19,8 +19,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Optional;
-
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin extends LivingEntity {
 
@@ -44,17 +42,18 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             if (this.operation != null) {
                 if (this.operation.minecart() != null && this.operation.minecart() != minecart &&
                         minecart.isAlive() && this.operation.minecart().isAlive()) {
-                    var result = this.operation.operation().perform(minecart, this.operation, Optional.of(player), stack);
+                    var result = this.operation.type().perform(minecart, this.operation, stack);
+                    if (result.isAccepted() && !player.isCreative()) stack.decrement(1);
                     finishOperation(cir, minecart, result);
                 } else {
                     finishOperation(cir, minecart, ActionResult.FAIL);
                 }
                 this.operation = null;
             } else if (minecart.linkart$getFollower() != null) {
-                this.operation = new CartOperation(CartOperation.Operation.UNLINKING, minecart);
+                this.operation = new CartOperation(CartOperation.Type.UNLINKING, minecart);
                 finishOperation(cir, minecart, ActionResult.SUCCESS);
             } else {
-                this.operation = new CartOperation(CartOperation.Operation.LINKING, minecart);
+                this.operation = new CartOperation(CartOperation.Type.LINKING, minecart);
                 finishOperation(cir, minecart, ActionResult.SUCCESS);
             }
         }
