@@ -65,7 +65,7 @@ jobs:
             fabric-api(required)
 
 
-          curseforge-id: 622736
-          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
-          curseforge-dependencies: |
-            fabric-api(required)
+          #curseforge-id: 622736
+          #curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          #curseforge-dependencies: |
+          #  fabric-api(required)
