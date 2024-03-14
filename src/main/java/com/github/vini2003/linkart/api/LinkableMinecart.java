@@ -2,7 +2,6 @@ package com.github.vini2003.linkart.api;
 
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.Vec3d;
 
 public interface LinkableMinecart {
 
@@ -27,10 +26,6 @@ public interface LinkableMinecart {
     }
 
     default void linkart$setLinkItem(ItemStack linkItem) {
-        throw new IllegalStateException("Implemented via mixin");
-    }
-
-    default Vec3d linkart$modifyMovement(Vec3d vec3d) {
         throw new IllegalStateException("Implemented via mixin");
     }
 }

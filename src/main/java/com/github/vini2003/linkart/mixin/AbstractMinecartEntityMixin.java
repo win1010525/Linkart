@@ -5,6 +5,8 @@ import com.github.vini2003.linkart.api.LinkableMinecart;
 import com.github.vini2003.linkart.utility.CartUtils;
 import com.github.vini2003.linkart.utility.CollisionUtils;
 import com.github.vini2003.linkart.utility.LoadingCarts;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
@@ -12,6 +14,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -81,11 +84,6 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
     // Ensure the train doesn't break apart (especially if other minecart mods increase speed)
     @ModifyArg(method = "moveOnRail", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/vehicle/AbstractMinecartEntity;move(Lnet/minecraft/entity/MovementType;Lnet/minecraft/util/math/Vec3d;)V", ordinal = 0))
     private Vec3d modifiedMovement(Vec3d movement) {
-        return this.linkart$modifyMovement(movement);
-    }
-
-    @Override
-    public Vec3d linkart$modifyMovement(Vec3d movement) {
         if (this.lastMovementLength < movement.length()) {
             final double targetMovementLength = movement.length();
 
@@ -95,6 +93,19 @@ public abstract class AbstractMinecartEntityMixin extends Entity implements Link
 
         this.lastMovementLength = movement.length();
         return movement;
+    }
+
+    @WrapOperation(method = "moveOnRail", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/MathHelper;clamp(DDD)D"))
+    private double linkart$skipVelocityClamping(double value, double min, double max, Operation<Double> original) {
+        if (this.linkart$getFollowing() != null) {
+            AbstractMinecartEntity following = this.linkart$getFollowing();
+            while (following.linkart$getFollowing() != null) {
+                following = following.linkart$getFollowing();
+            }
+            double parent = ((MinecartAccessor) following).linkart$getMaxSpeed();
+            return MathHelper.clamp(value, -parent, parent);
+        }
+        return original.call(value, min, max);
     }
 
     @Inject(at = @At("HEAD"), method = "tick")
