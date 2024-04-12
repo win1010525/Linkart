@@ -5,6 +5,7 @@ import com.github.vini2003.linkart.mixin.PersistentStateAccessor;
 import com.github.vini2003.linkart.utility.LinkartCommand;
 import com.github.vini2003.linkart.utility.LoadingCarts;
 import me.melontini.dark_matter.api.base.config.ConfigManager;
+import me.melontini.dark_matter.api.base.util.Context;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -48,8 +49,8 @@ public class Linkart implements ModInitializer {
     }
 
     public static void loadConfig() {
-        CONFIG = CONFIG_MANAGER.load(FabricLoader.getInstance().getConfigDir());
-        CONFIG_MANAGER.save(FabricLoader.getInstance().getConfigDir(), CONFIG);
+        CONFIG = CONFIG_MANAGER.load(FabricLoader.getInstance().getConfigDir(), Context.of());
+        CONFIG_MANAGER.save(FabricLoader.getInstance().getConfigDir(), CONFIG, Context.of());
     }
 
     private static RegistryKey<? extends Registry<Item>> itemKey() {

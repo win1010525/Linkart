@@ -2,6 +2,7 @@ package com.github.vini2003.linkart.utility;
 
 import me.melontini.dark_matter.api.base.util.Exceptions;
 import me.melontini.dark_matter.api.base.util.Mapper;
+import me.melontini.dark_matter.api.base.util.Utilities;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -37,7 +38,7 @@ public class LoadingCarts extends PersistentState {
                 PersistentState invoke(PersistentStateManager manager, Function<?,?> f, Supplier<?> s, String name);
             }
 
-            Invoker invoker = Lambdas.handle(MethodHandles.lookup(), Invoker.class, h);
+            Invoker invoker = Utilities.makeLambda(MethodHandles.lookup(), Invoker.class, h);
             return manager -> (LoadingCarts) invoker.invoke(manager, function, supplier, "linkart_loading_carts");
         }
     });
