@@ -1,34 +1,108 @@
-# Automatically build the project and run any configured tests for every push
-# and submitted pull request. This can help catch issues that only occur on
-# certain platforms or Java versions, and provides a first line of defence
-# against bad commits.
 
 name: build
-on: [ pull_request, push ]
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "The type of this version. e.g alpha"
+        type: choice
+        default: beta
+        options:
+          - release
+          - beta
+          - alpha
+        required: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: |
+      !contains(github.event.head_commit.message, '[ci skip]')
     steps:
-      - name: Checkout repository
+      - name: checkout repository
         uses: actions/checkout@v4.1.1
-      - name: Validate Gradle wrapper
+      - name: validate gradle wrapper
         uses: gradle/wrapper-validation-action@v2.1.1
-      - name: Setup JDK 17
+      - name: setup jdk
         uses: actions/setup-java@v4.1.0
         with:
           distribution: 'temurin'
           java-version: 17
-      - name: Make Gradle wrapper executable
+          cache: gradle
+      - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: Build
+      - name: build
         run: ./gradlew build
-      - name: Retrieve version #https://stackoverflow.com/questions/71089787/how-to-get-version-name-from-android-gradle-file-in-github-actions
+      - name: get version #https://stackoverflow.com/questions/71089787/how-to-get-version-name-from-android-gradle-file-in-github-actions
         run: |
-          echo "VERSION_INFORMATION=$(${{github.workspace}}/gradlew -q printVersionName)" >> $GITHUB_ENV 
-          echo "GIT_HASH=$(git rev-parse --short "$GITHUB_SHA")" >> $GITHUB_ENV
-      - name: Capture build artifacts
+          echo "VERSION_INFORMATION=$(${{github.workspace}}/gradlew -q printVersionName)" >> $GITHUB_ENV
+          echo "VERSION_PLAIN=$(${{github.workspace}}/gradlew -q printVersion)" >> $GITHUB_ENV
+          echo "GAME_VERSIONS=$(${{github.workspace}}/gradlew -q printGameVersions)" >> $GITHUB_ENV
+      - name: capture build artifacts
         uses: actions/upload-artifact@v4.3.1
         with:
           name: ${{ env.VERSION_INFORMATION }} [${{ env.GIT_HASH }}] #https://stackoverflow.com/questions/58886293/getting-current-branch-and-commit-hash-in-github-action
           path: build/libs/
+
+  packages:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4.1.1
+      - name: setup jdk
+        uses: actions/setup-java@v4.1.0
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          cache: gradle
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./gradlew publish
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4.1.1
+      - uses: actions/download-artifact@4.1.4
+        with:
+          name: Artifacts
+          path: build/libs
+
+      - name: publish release
+        uses: Kir-Antipov/mc-publish@v3.3.0
+        with:
+          version-type: ${{ inputs.version_type }}
+          changelog-file: CHANGELOG.md
+          name: ${{ env.VERSION_INFORMATION }}
+          version: ${{ env.VERSION_PLAIN }}
+
+          game-versions: |
+            ${{ env.GAME_VERSIONS }}
+
+          loaders: |
+            fabric
+
+          java: |
+            17
+
+          github-tag: v${{ env.VERSION_PLAIN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-commitish: ${{ github.sha }}
+          github-prerelease: false
+
+          modrinth-id: sc4Mu9Zu
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-featured: true
+          modrinth-unfeature-mode: subset
+          modrinth-dependencies: |
+            fabric-api(required)
+            dark-matter(embedded)
