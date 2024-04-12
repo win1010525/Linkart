@@ -84,6 +84,7 @@ tasks.register('printVersion') {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            artifactId 'linkart'
             from components.java
         }
     }
