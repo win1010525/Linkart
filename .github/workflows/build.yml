@@ -42,7 +42,7 @@ jobs:
       - name: capture build artifacts
         uses: actions/upload-artifact@v4.3.1
         with:
-          name: ${{ env.VERSION_INFORMATION }} [${{ env.GIT_HASH }}] #https://stackoverflow.com/questions/58886293/getting-current-branch-and-commit-hash-in-github-action
+          name: Artifacts #https://stackoverflow.com/questions/58886293/getting-current-branch-and-commit-hash-in-github-action
           path: build/libs/
 
   packages:
