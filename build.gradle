@@ -144,10 +144,18 @@ publishMods {
 
     displayName = "${project.mod_version} (${project.minecraft_version})"
 
+    ["1.19.2", "1.19.3", "1.19.4", "1.20", "1.20.1", "1.20.2", "1.20.3", "1.20.4"].each {
+        modrinth {
+            minecraftVersions.add(it)
+        }
+        curseforge {
+            minecraftVersions.add(it)
+        }
+    }
+
     modrinth {
         projectId = "sc4Mu9Zu"
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
-        minecraftVersions.add("${project.minecraft_version}")
 
         requires("fabric-api")
         embeds("dark-matter")
@@ -155,7 +163,6 @@ publishMods {
     curseforge {
         projectId = "622736"
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
-        minecraftVersions.add("${project.minecraft_version}")
 
         requires("fabric-api")
         embeds("dark-matter")

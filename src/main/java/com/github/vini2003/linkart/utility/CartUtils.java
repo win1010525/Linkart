@@ -19,9 +19,11 @@ public class CartUtils {
     }
 
     public static void unlinkFromParent(AbstractMinecartEntity entity) {
-        if (entity == null || entity.linkart$getFollowing() == null) return;
+        if (entity == null) return;
+        var following = entity.linkart$getFollowing();
+        if (following == null) return;
 
-        entity.linkart$getFollowing().linkart$setFollower(null);
+        following.linkart$setFollower(null);
         entity.linkart$setFollowing(null);
 
         entity.setVelocity(0, 0, 0);

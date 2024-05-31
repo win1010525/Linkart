@@ -26,8 +26,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
         super(entityType, world);
     }
 
-    @Unique
-    private CartOperation operation;
+    @Unique private CartOperation operation;
 
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     void onInteract(Entity entity, Hand hand, CallbackInfoReturnable<ActionResult> cir) {
@@ -59,8 +58,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
         }
     }
 
-    @Unique
-    private void finishOperation(CallbackInfoReturnable<ActionResult> cir, AbstractMinecartEntity minecart, ActionResult result) {
+    @Unique private void finishOperation(CallbackInfoReturnable<ActionResult> cir, AbstractMinecartEntity minecart, ActionResult result) {
         if (result.isAccepted()) {
             ((ServerWorld) minecart.getWorld()).spawnParticles(ParticleTypes.HAPPY_VILLAGER, minecart.getX(), minecart.getY() + 0.2, minecart.getZ(), 10, 0.5, 0.5, 0.5, 0.5);
         } else {

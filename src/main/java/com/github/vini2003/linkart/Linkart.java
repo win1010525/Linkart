@@ -25,7 +25,7 @@ public class Linkart implements ModInitializer {
     public static final Logger LOGGER = LogManager.getLogger(ID);
     public static final ConfigManager<LinkartConfiguration> CONFIG_MANAGER = ConfigManager.of(LinkartConfiguration.class, ID, LinkartConfiguration::new)
             .exceptionHandler((e, stage, path) -> LOGGER.error("Failed to {} {}", stage.name().toLowerCase(), FabricLoader.getInstance().getGameDir().relativize(path)));
-    public static LinkartConfiguration CONFIG;
+    private static LinkartConfiguration CONFIG;
     public static final TagKey<Item> LINKERS = TagKey.of(itemKey(), new Identifier(ID, "linkers"));
 
     static {
@@ -38,11 +38,11 @@ public class Linkart implements ModInitializer {
         });
 
         ServerWorldEvents.LOAD.register((server, world) -> {
-            if (CONFIG.chunkloading) LoadingCarts.getOrCreate(world);
+            if (getConfig().chunkloading) LoadingCarts.getOrCreate(world);
         });
 
         ServerTickEvents.START_WORLD_TICK.register(world -> {
-            if (CONFIG.chunkloading && ((PersistentStateAccessor) world.getPersistentStateManager()).linkart$loadedStates().containsKey("linkart_loading_carts")) {
+            if (getConfig().chunkloading && ((PersistentStateAccessor) world.getPersistentStateManager()).linkart$loadedStates().containsKey("linkart_loading_carts")) {
                 LoadingCarts.getOrCreate(world).tick(world);
             }
         });
@@ -50,10 +50,14 @@ public class Linkart implements ModInitializer {
 
     public static void loadConfig() {
         CONFIG = CONFIG_MANAGER.load(FabricLoader.getInstance().getConfigDir(), Context.of());
-        CONFIG_MANAGER.save(FabricLoader.getInstance().getConfigDir(), CONFIG, Context.of());
+        CONFIG_MANAGER.save(FabricLoader.getInstance().getConfigDir(), getConfig(), Context.of());
     }
 
     private static RegistryKey<? extends Registry<Item>> itemKey() {
         return RegistryKey.ofRegistry(Identifier.tryParse("item"));
+    }
+
+    public static LinkartConfiguration getConfig() {
+        return CONFIG;
     }
 }

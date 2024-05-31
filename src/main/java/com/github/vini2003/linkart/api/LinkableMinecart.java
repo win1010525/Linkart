@@ -2,10 +2,11 @@ package com.github.vini2003.linkart.api;
 
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 public interface LinkableMinecart {
 
-    default AbstractMinecartEntity linkart$getFollowing() {
+    default @Nullable AbstractMinecartEntity linkart$getFollowing() {
         throw new IllegalStateException("Implemented via mixin");
     }
 
@@ -13,7 +14,7 @@ public interface LinkableMinecart {
         throw new IllegalStateException("Implemented via mixin");
     }
 
-    default AbstractMinecartEntity linkart$getFollower() {
+    default @Nullable AbstractMinecartEntity linkart$getFollower() {
         throw new IllegalStateException("Implemented via mixin");
     }
 

@@ -16,7 +16,7 @@ public class CollisionUtils {
 
                 check = check.linkart$getFollower();
                 ++i;
-            } while (check != null && i < Linkart.CONFIG.collisionDepth);
+            } while (check != null && i < Linkart.getConfig().collisionDepth);
 
             check = (AbstractMinecartEntity) source;
             i = 0;
@@ -24,7 +24,7 @@ public class CollisionUtils {
             while (check != target) {
                 check = check.linkart$getFollowing();
                 ++i;
-                if (check == null || i >= Linkart.CONFIG.collisionDepth) {
+                if (check == null || i >= Linkart.getConfig().collisionDepth) {
                     return true;
                 }
             }
