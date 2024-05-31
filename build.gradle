@@ -1,6 +1,13 @@
+import com.github.spotbugs.snom.SpotBugsTask
+import me.modmuss50.mpp.ReleaseType
+
 plugins {
-    id 'fabric-loom' version '1.6-SNAPSHOT'
+    alias libs.plugins.fabric.loom
     id 'maven-publish'
+    alias libs.plugins.lombok
+    alias libs.plugins.spotbugs.base
+    alias libs.plugins.spotless
+    alias libs.plugins.modmuss50.publish
 }
 
 def local = !System.getenv().containsKey("GITHUB_RUN_NUMBER")
@@ -19,20 +26,57 @@ dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation libs.fabric.loader
 
     // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modApi include("me.melontini:dark-matter-base:${project.dark_matter_version}")
+    modImplementation libs.fabric.api
+    modApi libs.dark.matter.base
+    include libs.dark.matter.base
+}
+
+tasks.register("spotbugs", SpotBugsTask) { task ->
+    sourceSets.each {
+        task.sourceDirs.from(task.sourceDirs.files, it.allSource.sourceDirectories)
+        task.classDirs.from(task.classDirs.files, it.output)
+        task.auxClassPaths.from(task.auxClassPaths.files, it.compileClasspath)
+    }
+    excludeFilter = file("spotbugs.xml")
+    ignoreFailures = true
+    reports {
+        if (local) {
+            html {
+                required = true
+                outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+                stylesheet = 'fancy-hist.xsl'
+            }
+        } else {
+            sarif {
+                required = true
+                outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.sarif")
+            }
+        }
+    }
+}
+
+spotless {
+    java {
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        formatAnnotations()
+        importOrder('', 'java|javax', '\\#')
+    }
 }
 
 processResources {
-    inputs.property "version", project.version
-    inputs.property "loader_version", project.loader_version
+    def map = [
+            "version": project.version,
+            "loader_version": libs.fabric.loader.get().version
+    ]
+    inputs.properties(map)
+    filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
-        expand "version": project.version,
-                "loader_version": project.loader_version
+        expand map
     }
 }
 
@@ -62,22 +106,11 @@ jar {
     }
 }
 
-tasks.register('printGameVersions') {
-    doLast {
-        println project.game_versions
+sourcesJar {
+    exclude {
+        sourceSets.main.allSource.contains it.file
     }
-}
-
-tasks.register('printVersionName') {
-    doLast {
-        println version.split("-")[0] + " (" + project.game_versions.replace(" ", "-").replaceAll("[>=<]", "") + ")"
-    }
-}
-
-tasks.register('printVersion') {
-    doLast {
-        println version
-    }
+    from delombok
 }
 
 // configure the maven publication
@@ -99,4 +132,41 @@ publishing {
             }
         }
     }
+}
+
+publishMods {
+    file = remapJar.archiveFile
+    additionalFiles.from(remapSourcesJar.archiveFile)
+
+    changelog = file("CHANGELOG.md").text
+    type = ReleaseType.valueOf(providers.environmentVariable("VERSION_TYPE").getOrElse("BETA"))
+    modLoaders.add("fabric")
+
+    displayName = "${project.mod_version} (${project.minecraft_version})"
+
+    modrinth {
+        projectId = "sc4Mu9Zu"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.add("${project.minecraft_version}")
+
+        requires("fabric-api")
+        embeds("dark-matter")
+    }
+    curseforge {
+        projectId = "622736"
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        minecraftVersions.add("${project.minecraft_version}")
+
+        requires("fabric-api")
+        embeds("dark-matter")
+    }
+    github {
+        repository = "constellation-mc/Linkart"
+        accessToken = providers.environmentVariable("GITHUB_TOKEN")
+        commitish = providers.environmentVariable("GITHUB_SHA").getOrElse("${project.minecraft_version}-fabric")
+
+        type = STABLE
+    }
+
+    dryRun = local
 }
